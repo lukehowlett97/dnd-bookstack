@@ -1,0 +1,33 @@
+services:
+  bookstack:
+    image: solidnerd/bookstack:latest
+    container_name: bookstack
+    environment:
+      - DB_HOST=bookstack_db
+      - DB_DATABASE=${DB_DATABASE:-bookstackapp}
+      - DB_USERNAME=${DB_USERNAME:-bookstack}
+      - DB_PASSWORD=${DB_PASSWORD:-change-me}
+      - APP_URL=${APP_URL:-http://localhost:8080}
+      - APP_KEY=${APP_KEY:-}
+      - FORCE_HTTPS=${FORCE_HTTPS:-true}
+      - TRUSTED_PROXIES=${TRUSTED_PROXIES:-*}
+      - APP_THEME=${APP_THEME:-custom}
+    ports:
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - ./uploads:/var/www/bookstack/public/uploads
+      - ./storage:/var/www/bookstack/storage
+      - ./theme:/var/www/bookstack/public/themes/custom
+    depends_on:
+      - bookstack_db
+
+  bookstack_db:
+    image: mariadb
+    container_name: bookstack_db
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-rootpass}
+      - MYSQL_DATABASE=${DB_DATABASE:-bookstackapp}
+      - MYSQL_USER=${DB_USERNAME:-bookstack}
+      - MYSQL_PASSWORD=${DB_PASSWORD:-change-me}
+    volumes:
+      - ./db:/var/lib/mysql

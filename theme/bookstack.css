@@ -1,0 +1,24 @@
+/* Minimal mobile polish; enabled via APP_THEME=custom */
+@media (max-width: 480px) {
+  :root { font-size: 17px; }
+  .page-content, .card, .container, .content-wrap { padding-left: 14px; padding-right: 14px; }
+  .header .logo, .header .container { min-height: 52px; }
+  .entity-list-item .item-name, .page-title { line-height: 1.25; }
+  .card .card-content { padding: 14px; }
+}
+
+.page-content table {
+  display: block;
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 480px) {
+  pre, code { white-space: pre-wrap; word-break: break-word; }
+}
+
+.header .actions a,
+.header .actions button { padding: 10px 12px; }
+
+.page-content p { line-height: 1.6; }

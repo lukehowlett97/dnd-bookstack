@@ -1,0 +1,10 @@
+[Unit]
+Description=Backup BookStack (DB + files)
+Wants=docker.service
+After=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/backup_bookstack.sh
+Nice=10
+IOSchedulingClass=best-effort
