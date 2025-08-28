@@ -8,3 +8,11 @@ Type=oneshot
 ExecStart=/usr/local/bin/git_auto_push_bookstack
 Nice=10
 IOSchedulingClass=best-effort
+WorkingDirectory=/root/srv/projects/bookstack
+Environment=HOME=/root
+Environment=PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+Environment=DEBUG=1
+User=root
+Group=root
+StandardOutput=journal
+StandardError=journal
