@@ -1,8 +1,15 @@
+# Keep repo clean of DB engine files & secrets
 db/
-uploads/
-storage/
-backups/
 .env
-*.sql*
-*.tar.gz
+
+# Legacy backups directory (unused now)
+backups/
+
+# Logs
 *.log
+
+# Allow uploads & storage in Git, but ignore volatile cache/logs within storage
+storage/framework/
+storage/logs/
+storage/clockwork/
+storage/debugbar/

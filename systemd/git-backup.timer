@@ -1,8 +1,8 @@
 [Unit]
-Description=Daily BookStack backup
+Description=Daily Git commit+push for BookStack repo
 
 [Timer]
-OnCalendar=*-*-* 02:15:00
+OnCalendar=*-*-* 02:30:00
 Persistent=true
 RandomizedDelaySec=5m
 

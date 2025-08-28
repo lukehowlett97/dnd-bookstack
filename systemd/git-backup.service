@@ -1,0 +1,10 @@
+[Unit]
+Description=Auto-commit and push BookStack repo
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/git_auto_push_bookstack
+Nice=10
+IOSchedulingClass=best-effort

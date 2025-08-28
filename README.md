@@ -1,12 +1,12 @@
 # BookStack Deployment (Docker Compose)
 
-This repo holds a maintainable BookStack deployment: bind-mounted app data, daily backups, optional Nginx, and a small mobile theme.
+This repo holds a maintainable BookStack deployment: bind-mounted app data, automated Git snapshots of config + data (uploads, storage, DB dumps), optional Nginx, and a small mobile theme.
 
 ## Files
 - `docker-compose.yml` — BookStack + MariaDB with bind mounts, port bound to localhost, and theme volume.
 - `.env.sample` — Copy to `.env` and fill in your values (do not commit `.env`).
-- `scripts/backup_bookstack.sh` — DB + files backup with 14-day retention.
-- `systemd/backup-bookstack.service` & `.timer` — Daily backup at 02:15.
+- `scripts/git_auto_push.sh` — Dumps DB into `db_dumps/`, stages uploads/storage, commits, and pushes.
+- `systemd/git-backup.service` & `.timer` — Daily Git commit+push at 02:30.
 - `nginx.bookstack.conf` — Example reverse-proxy to 127.0.0.1:8080 with HTTPS.
 - `theme/bookstack.css` — Mobile polish, enabled via `APP_THEME=custom`.
 
@@ -45,24 +45,36 @@ sudo ln -sf /etc/nginx/sites-available/bookstack /etc/nginx/sites-enabled/bookst
 sudo nginx -t && sudo systemctl reload nginx
 ```
 
-4) Backups
-- Install script & systemd units:
+4) Automatic Git commits/pushes (backup via Git)
+- Configure your remote first (SSH recommended):
 ```
-sudo install -m 0755 scripts/backup_bookstack.sh /usr/local/bin/backup_bookstack.sh
-sudo cp systemd/backup-bookstack.service /etc/systemd/system/
-sudo cp systemd/backup-bookstack.timer /etc/systemd/system/
+cd ~/bookstack
+git remote add origin git@github.com:YOURUSER/YOURREPO.git
+# or: git remote set-url origin git@github.com:YOURUSER/YOURREPO.git
+git push -u origin $(git rev-parse --abbrev-ref HEAD)
+```
+- Install the wrapper and systemd units:
+```
+sudo install -m 0755 scripts/git_auto_push.sh /usr/local/bin/git_auto_push_bookstack
+sudo cp systemd/git-backup.service /etc/systemd/system/
+sudo cp systemd/git-backup.timer /etc/systemd/system/
 sudo systemctl daemon-reload
-sudo systemctl enable --now backup-bookstack.timer
+sudo systemctl enable --now git-backup.timer
 ```
-- Test once:
+- Test once and view logs:
 ```
-sudo systemctl start backup-bookstack.service
-sudo journalctl -u backup-bookstack.service -n 100 --no-pager
+sudo systemctl start git-backup.service
+sudo journalctl -u git-backup.service -n 100 --no-pager
 ```
-- Backups land in `./backups`. Consider adding offsite sync (e.g., `rclone`) to the script.
+- Check schedule:
+```
+systemctl list-timers | grep git-backup
+```
 
 ## Notes
-- Do not commit `.env` or secrets. `.gitignore` excludes data & backups.
+- Git snapshots now include:
+  - `uploads/` and `storage/` (except volatile cache/log paths ignored under `storage/`)
+  - Daily DB dumps in `db_dumps/db_YYYY-MM-DD_HH-MM-SS.sql.gz` (keeps last 30)
+- Do not commit `.env` or secrets. `.gitignore` excludes `.env` and `db/` (the MariaDB data directory). DB dumps contain your content (make your GitHub repo private unless you intend to publish it).
 - The theme is mounted into `/var/www/bookstack/public/themes/custom`; ensure `APP_THEME=custom`.
 - Port `8080` binds to `127.0.0.1` for reverse-proxy-only exposure.
-
