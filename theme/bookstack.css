@@ -1,24 +1,114 @@
-/* Minimal mobile polish; enabled via APP_THEME=custom */
-@media (max-width: 480px) {
-  :root { font-size: 17px; }
-  .page-content, .card, .container, .content-wrap { padding-left: 14px; padding-right: 14px; }
-  .header .logo, .header .container { min-height: 52px; }
-  .entity-list-item .item-name, .page-title { line-height: 1.25; }
-  .card .card-content { padding: 14px; }
+/* Mobile usability improvements; enabled via APP_THEME=custom */
+
+/* Brand + spacing variables (easy to tweak) */
+:root {
+  --brand: #8b5e34;           /* header / accent */
+  --brand-weak: #d8c2a8;      /* soft borders */
+  --link: #7a3e00;            /* link color */
+  --radius: 10px;             /* rounded cards */
+  --pad: 14px;                /* base padding */
 }
 
+/* Base readability */
+@media (max-width: 768px) {
+  :root { font-size: 17px; }
+  body { line-height: 1.6; }
+
+  /* Comfortable horizontal padding */
+  .page-content, .card, .container, .content-wrap { padding-left: var(--pad); padding-right: var(--pad); }
+
+  /* Header sizing & touch targets */
+  .header .logo, .header .container { min-height: 56px; }
+  .header .actions a,
+  .header .actions button { padding: 10px 14px; min-height: 44px; }
+
+  /* Titles & entity names tighter leading */
+  .entity-list-item .item-name, .page-title { line-height: 1.25; }
+
+  /* Card interior spacing */
+  .card .card-content { padding: 14px; }
+
+  /* Forms & search inputs */
+  input[type="text"], input[type="search"], input[type="email"], input[type="password"],
+  .input, .select, .button, button { min-height: 44px; }
+}
+
+/* Tables: scroll instead of squish */
 .page-content table {
   display: block;
   width: 100%;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
 }
+.page-content table th, .page-content table td { white-space: nowrap; }
 
+/* Code blocks: wrap long tokens on phones */
 @media (max-width: 480px) {
   pre, code { white-space: pre-wrap; word-break: break-word; }
 }
 
-.header .actions a,
-.header .actions button { padding: 10px 12px; }
+/* Images scale to viewport */
+.page-content img { max-width: 100%; height: auto; }
 
-.page-content p { line-height: 1.6; }
+/* Reduce clutter in entity lists on small screens */
+@media (max-width: 600px) {
+  .entity-list-item .item-meta { font-size: 0.875rem; opacity: 0.85; }
+  .entity-list-item .item-excerpt { display: none; }
+}
+
+/* Sidebar/layout: ensure content uses full width on small screens */
+@media (max-width: 900px) {
+  .tri-layout .sidebar, .page-sidebar { max-width: 100%; }
+}
+@media (max-width: 768px) {
+  .tri-layout .sidebar, .page-sidebar { display: none; }
+  .tri-layout .content, .content-wrap { width: 100%; margin: 0; }
+}
+
+/* Paragraph rhythm */
+.page-content p { line-height: 1.7; }
+
+/* Headings sizing/spacing on phones */
+@media (max-width: 480px) {
+  .page-content h1 { font-size: 1.8rem; line-height: 1.25; margin-top: 0.75rem; margin-bottom: 0.5rem; }
+  .page-content h2 { font-size: 1.4rem; line-height: 1.3; margin-top: 1rem; margin-bottom: 0.5rem; }
+  .page-content h3 { font-size: 1.2rem; line-height: 1.35; }
+}
+
+/* Make headings align when linking via anchors (avoid header overlap) */
+.page-content h1, .page-content h2, .page-content h3, .page-content h4, .page-content h5, .page-content h6 {
+  scroll-margin-top: 72px;
+}
+
+/* Improve link contrast */
+.page-content a { color: var(--link); }
+.page-content a:hover, .page-content a:focus { text-decoration: underline; }
+
+/* Cards look a bit softer */
+.card, .content-wrap .card { border-radius: var(--radius); border-color: var(--brand-weak); }
+
+/* Alerts: more readable spacing */
+.notice, .warning, .error, .success, .info, .tip, .callout { padding: 12px 14px; border-radius: var(--radius); }
+
+/* Tabs row: keep visible and tappable on mobile */
+.tabs, .page-tabs, .content-tabs, .tab-container {
+  position: sticky;
+  top: 56px;                 /* below header */
+  z-index: 20;
+  background: #fff;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.tabs a, .page-tabs a, .content-tabs a { padding: 12px 14px; min-height: 44px; }
+.tabs .selected, .page-tabs .selected, .content-tabs .selected { border-bottom-color: var(--brand); }
+
+/* Header brand harmonization */
+.header, .header .container { background-color: var(--brand); }
+.header a, .header .logo, .header .actions a, .header .actions button { color: #fff; }
+
+/* Image placeholders shouldn’t break layout */
+.page-content img { display: block; margin: 8px 0; background: #f8f8f8; border-radius: 6px; }
+
+/* Tighter lists */
+.page-content ul, .page-content ol { margin-top: 0.25rem; margin-bottom: 0.75rem; }
+.page-content li { margin: 0.2rem 0; }

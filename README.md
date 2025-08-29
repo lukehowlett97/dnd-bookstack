@@ -71,6 +71,50 @@ sudo journalctl -u git-backup.service -n 100 --no-pager
 systemctl list-timers | grep git-backup
 ```
 
+### SSH Deploy Key (recommended for unattended pushes)
+- Generate a dedicated key and add it to the repo as a Deploy key with write access:
+```
+ssh-keygen -t ed25519 -f /root/.ssh/dnd-bookstack -N "" -C "dnd-bookstack-deploy"
+cat /root/.ssh/dnd-bookstack.pub  # paste into GitHub → Repo → Settings → Deploy keys → Allow write
+printf "Host github.com\n  HostName github.com\n  User git\n  IdentityFile /root/.ssh/dnd-bookstack\n" >> /root/.ssh/config
+chmod 600 /root/.ssh/dnd-bookstack /root/.ssh/config && chmod 644 /root/.ssh/dnd-bookstack.pub
+ssh -T git@github.com  # should say authenticated, no shell access
+git remote set-url origin git@github.com:YOURUSER/YOURREPO.git
+```
+
+### Seed data into the repo (first run)
+If your repo does not yet contain `uploads/` and `storage/`, copy from the running app once, then commit:
+```
+docker compose cp bookstack:/var/www/bookstack/storage ./storage
+docker compose cp bookstack:/var/www/bookstack/public/uploads ./uploads
+git add -A && git commit -m "seed data" && git push
+```
+
+### How the backup works
+- Runs daily at 02:30 by `git-backup.timer`.
+- Creates a DB dump via `mariadb-dump` (or `mysqldump` fallback) inside the DB container to `db_dumps/db_YYYY-MM-DD_HH-MM-SS.sql.gz`.
+- Stages changes in `uploads/`, `storage/` (ignoring cache/logs), and `db_dumps/`, commits with message `chore(backup): auto snapshot …`, then pushes to `origin` on the current branch.
+- Keeps the last 30 dumps by modification time.
+
+### Troubleshooting
+- Compose file error: `no configuration file provided`
+  - The script forces `-f /root/srv/projects/bookstack/docker-compose.yml` but verify it exists and matches your path.
+  - Run interactive debug: `DEBUG=1 /usr/local/bin/git_auto_push_bookstack`.
+- Dump tool missing: `mysqldump: not found`
+  - The script prefers `mariadb-dump` and falls back to `mysqldump`. Ensure your DB container has one; otherwise switch to the official `mariadb` image or install client tools.
+- Push/auth issues
+  - Use SSH deploy key above and set the remote to `git@github.com:...`. Ensure `/root/.ssh/config` points to the key and host key is accepted.
+- Docker availability
+  - Service declares `Wants/After=docker.service`. Ensure the stack is running: `docker compose -f ./docker-compose.yml ps`.
+- Wrong repo path
+  - Unit uses `WorkingDirectory=/root/srv/projects/bookstack`. Update `systemd/git-backup.service` if your path differs.
+
+### Change schedule
+Edit `/etc/systemd/system/git-backup.timer` and adjust `OnCalendar=` (e.g., `hourly`), then:
+```
+sudo systemctl daemon-reload && sudo systemctl restart git-backup.timer
+```
+
 ## Notes
 - Git snapshots now include:
   - `uploads/` and `storage/` (except volatile cache/log paths ignored under `storage/`)
