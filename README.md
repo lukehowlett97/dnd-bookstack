@@ -122,3 +122,54 @@ sudo systemctl daemon-reload && sudo systemctl restart git-backup.timer
 - Do not commit `.env` or secrets. `.gitignore` excludes `.env` and `db/` (the MariaDB data directory). DB dumps contain your content (make your GitHub repo private unless you intend to publish it).
 - The theme is mounted into `/var/www/bookstack/public/themes/custom`; ensure `APP_THEME=custom`.
 - Port `8080` binds to `127.0.0.1` for reverse-proxy-only exposure.
+
+## Export Wiki Content (DB → Files)
+- Script: `bookstack/scripts/export_bookstack.py` exports pages as Markdown when available, else HTML, into a folder tree and writes an `_index.csv` manifest.
+
+1) Get DB connection details
+```
+grep -E 'DB_(HOST|DATABASE|USERNAME|PASSWORD|PORT)' -n docker-compose.yml
+```
+Tip: create a read-only DB user first (inside the DB container):
+```
+docker compose exec -it bookstack_db mysql -u root -p
+CREATE USER 'bs_reader'@'%' IDENTIFIED BY 'strongpass';
+GRANT SELECT ON ${DB_DATABASE}.* TO 'bs_reader'@'%';
+FLUSH PRIVILEGES;
+```
+
+2) Ensure host access to DB
+- The DB service is not published by default. Either temporarily publish port 3306 to localhost in compose:
+```
+  bookstack_db:
+    ports:
+      - "127.0.0.1:3306:3306"
+```
+  then `docker compose up -d`,
+  or run the exporter inside a container on the same docker network.
+
+3) Run the exporter
+```
+pip install pandas pymysql
+export BS_DB_HOST=127.0.0.1
+export BS_DB_PORT=3306
+export BS_DB_NAME=${DB_DATABASE}
+export BS_DB_USER=bs_reader
+export BS_DB_PASS=strongpass
+
+python bookstack/scripts/export_bookstack.py -o bookstack_export
+```
+- The script auto-reads `bookstack/.env` to fill `BS_DB_NAME`/`BS_DB_USER`/`BS_DB_PASS` if those vars are not set, but you must still set `BS_DB_HOST` (and `BS_DB_PORT` if non-default).
+
+Output structure:
+```
+bookstack_export/
+  My_Book/
+    My_Chapter/
+      000123_My_Page.md
+  _index.csv
+```
+
+Notes
+- `pages.markdown` contains Markdown if last edited via Markdown editor; otherwise the canonical content is in `pages.html`.
+- Prefer the BookStack API if you want API-level `raw_html` or ZIP export/import; this script reads directly from SQL for speed/offline export.
